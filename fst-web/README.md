@@ -26,14 +26,19 @@ npm run build:fst-web
 
 ## Деплой Vercel
 
+Репозиторий: https://github.com/DMDAdmin/FST-uchet
+
+Production: https://fst-uchet.vercel.app
+
+Корневой `vercel.json` собирает `fst-web` из монорепозитория:
+
 ```bash
-cd fst-web
 vercel --prod
 ```
 
-Или подключите репозиторий GitHub — **Root Directory:** `fst-web`.
+Или подключите GitHub — **Root Directory:** корень репозитория (не `fst-web`).
 
-Переменные окружения `VITE_FIREBASE_*` задайте в Vercel Dashboard.
+Переменные окружения `VITE_FIREBASE_*` задайте в Vercel Dashboard → Project → Settings → Environment Variables.
 
 ## Деплой Firebase Hosting
 

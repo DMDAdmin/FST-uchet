@@ -20,6 +20,7 @@ dist-ssr
 fst-web/.env
 fst-web/dist
 .firebase
+.vercel
 
 # Editor directories and files
 .vscode/*
@@ -31,3 +32,5 @@ fst-web/dist
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
