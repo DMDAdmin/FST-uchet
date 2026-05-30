@@ -1,0 +1,108 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --color-paper: #f3efe6;
+  --color-paper-dark: #e8e2d6;
+  --color-ink: #1c1917;
+  --color-ink-muted: #57534e;
+  --color-accent: #ff5500;
+  --color-accent-soft: #ffe8dc;
+  --color-grid: #d6d3d1;
+  --color-mark-ya: #166534;
+  --color-mark-b: #1d4ed8;
+  --color-mark-o: #a16207;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgb(255 85 0 / 0.06), transparent 42%),
+    linear-gradient(180deg, #faf8f4 0%, var(--color-paper) 100%);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a8a29e;
+  border-radius: 999px;
+}
+
+/* ——— FiberCell брендинг ——— */
+.fc-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.fc-brand--sidebar {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.fc-brand__mark {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.fc-brand__wordmark {
+  display: block;
+  object-fit: contain;
+}
+
+.fc-brand--sidebar .fc-brand__mark {
+  width: 2.5rem;
+  height: auto;
+}
+
+.fc-brand--sidebar .fc-brand__wordmark {
+  width: 100%;
+  max-width: 8.5rem;
+  height: auto;
+}
+
+.fc-brand--page .fc-brand__mark {
+  width: 2.25rem;
+  height: auto;
+}
+
+.fc-brand--page .fc-brand__wordmark {
+  width: 7.5rem;
+  height: auto;
+}
+
+.fc-brand--print .fc-brand__mark {
+  width: 10mm;
+  height: auto;
+}
+
+.fc-brand--print .fc-brand__wordmark {
+  width: 38mm;
+  height: auto;
+}
+
+@media print {
+  body:not(.print-preview-open) .app-sidebar,
+  body:not(.print-preview-open) .print\:hidden {
+    display: none !important;
+  }
+}
