@@ -48,8 +48,17 @@ export function FstCloudSync({ store, replaceStore }: FstCloudSyncProps) {
 
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      void saveCloudStore(user.uid, store).catch(() => {
-        setCloudError('Ошибка сохранения в облако.')
+      void saveCloudStore(user.uid, store).catch((err) => {
+        console.error('FST cloud save failed', err)
+        const code =
+          err && typeof err === 'object' && 'code' in err ? String((err as { code: string }).code) : ''
+        if (code.includes('permission-denied')) {
+          setCloudError('Нет доступа к облаку. Выйдите и войдите снова.')
+        } else if (code.includes('resource-exhausted') || code.includes('invalid-argument')) {
+          setCloudError('Данные слишком большие для облака (лимит Firestore 1 MB).')
+        } else {
+          setCloudError('Ошибка сохранения в облако.')
+        }
       })
     }, SAVE_DEBOUNCE_MS)
 

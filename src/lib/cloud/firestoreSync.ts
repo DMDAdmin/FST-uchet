@@ -2,8 +2,11 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { createDefaultStore } from '@/lib/storage'
 import type { AppStore } from '@/lib/types'
 import { getFirestoreDb, isFirebaseConfigured } from './firebase'
+import { stripUndefinedDeep } from './firestoreSanitize'
 
 const COLLECTION = 'fstStores'
+/** Firestore document limit is 1 MiB — warn in console if close. */
+const FIRESTORE_DOC_WARN_BYTES = 900_000
 
 function storeDocPath(uid: string): string {
   return `${COLLECTION}/${uid}`
@@ -21,15 +24,20 @@ export async function loadCloudStore(uid: string): Promise<AppStore | null> {
 
 export async function saveCloudStore(uid: string, store: AppStore): Promise<void> {
   if (!isFirebaseConfigured()) return
+  const payload = stripUndefinedDeep(store)
+  const size = JSON.stringify(payload).length
+  if (size > FIRESTORE_DOC_WARN_BYTES) {
+    console.warn(`FST cloud: payload ${Math.round(size / 1024)} KB — близко к лимиту Firestore 1 MB`)
+  }
   const ref = doc(getFirestoreDb(), storeDocPath(uid))
   await setDoc(
     ref,
-    {
-      payload: store,
+    stripUndefinedDeep({
+      payload,
       updatedAt: serverTimestamp(),
       app: 'FST',
       version: store.version,
-    },
+    }),
     { merge: true },
   )
 }
