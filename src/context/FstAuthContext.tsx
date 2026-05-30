@@ -15,11 +15,13 @@ import {
   type ReactNode,
 } from 'react'
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/cloud/firebase'
+import { isFstAdminEmail } from '@/lib/cloud/fstAdmin'
 
 type FstAuthContextValue = {
   user: User | null
   loading: boolean
   configured: boolean
+  isAdmin: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
@@ -57,7 +59,15 @@ export function FstAuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, configured, login, register, logout }),
+    () => ({
+      user,
+      loading,
+      configured,
+      isAdmin: isFstAdminEmail(user?.email ?? null),
+      login,
+      register,
+      logout,
+    }),
     [user, loading, configured, login, register, logout],
   )
 

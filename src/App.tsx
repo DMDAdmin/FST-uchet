@@ -21,30 +21,36 @@ import { FstCloudSync } from '@/components/web/FstCloudSync'
 
 const isFstWeb = import.meta.env.VITE_FST_WEB === 'true'
 
-export default function App() {
+type AppProps = {
+  forceFullAccess?: boolean
+}
+
+export default function App({ forceFullAccess = false }: AppProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const app = useAppStore()
   const accountant = useAccountant(app.store.settings.accountantPassword)
+  const hasFullAccess = accountant.isAccountant || forceFullAccess
   const [showLogin, setShowLogin] = useState(false)
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(
     () =>
+      !forceFullAccess &&
       !app.store.settings.passwordChanged &&
       app.store.settings.accountantPassword === DEFAULT_ACCOUNTANT_PASSWORD,
   )
   const [importNotice, setImportNotice] = useState<string | null>(null)
 
   useEffect(() => {
-    if (app.view === 'pay' && !accountant.isAccountant) {
+    if (app.view === 'pay' && !hasFullAccess) {
       setShowLogin(true)
     }
-  }, [app.view, accountant.isAccountant])
+  }, [app.view, hasFullAccess])
 
   useEffect(() => {
     document.documentElement.classList.remove('dark')
   }, [])
 
   function handleViewChange(view: typeof app.view) {
-    if (view === 'pay' && !accountant.isAccountant) {
+    if (view === 'pay' && !hasFullAccess) {
       setShowLogin(true)
       return
     }
@@ -97,7 +103,7 @@ export default function App() {
         <AppShell
           store={app.store}
           view={app.view}
-          isAccountant={accountant.isAccountant}
+          isAccountant={hasFullAccess}
           onViewChange={handleViewChange}
           onAccountantLogout={accountant.logout}
           onImport={() => fileRef.current?.click()}
@@ -146,13 +152,13 @@ export default function App() {
             <EmployeesPage
               employees={app.store.employees}
               brigades={app.store.brigades}
-              isAccountant={accountant.isAccountant}
+              isAccountant={hasFullAccess}
               onSave={app.upsertEmployee}
               onRemove={app.removeEmployee}
             />
           )}
           {app.view === 'summary' && <SummaryPage store={app.store} />}
-          {app.view === 'pay' && accountant.isAccountant && (
+          {app.view === 'pay' && hasFullAccess && (
             <PayPage
               store={app.store}
               month={app.activeMonth}
@@ -187,7 +193,7 @@ export default function App() {
           {app.view === 'settings' && (
             <SettingsPage
               store={app.store}
-              isAccountant={accountant.isAccountant}
+              isAccountant={hasFullAccess}
               onAddBrigade={app.addBrigade}
               onRenameBrigade={app.renameBrigade}
               onRemoveBrigade={app.removeBrigade}
@@ -210,7 +216,7 @@ export default function App() {
             onLogin={accountant.login}
             onClose={() => {
               setShowLogin(false)
-              if (!accountant.isAccountant && app.view === 'pay') {
+              if (!hasFullAccess && app.view === 'pay') {
                 app.setView('month')
               }
             }}
