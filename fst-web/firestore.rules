@@ -11,6 +11,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /accepted_days/{dayId} {
+      allow read, write: if true;
+    }
+
+    match /cook_finance/{docId} {
+      allow read, write: if true;
+    }
+
     match /config/{docId} {
       allow read, write: if true;
     }
