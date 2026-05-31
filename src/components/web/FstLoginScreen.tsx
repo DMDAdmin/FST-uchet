@@ -1,6 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFstAuth } from '@/context/FstAuthContext'
 import { FST_ADMIN_EMAIL } from '@/lib/cloud/fstAdmin'
+import {
+  biometricErrorMessage,
+  hasBiometricRegistration,
+  isBiometricSupported,
+  isPlatformAuthenticatorAvailable,
+  loginWithBiometric,
+  registerBiometric,
+} from '@/lib/cloud/fstBiometric'
 
 export function FstLoginScreen() {
   const { login, configured } = useFstAuth()
@@ -8,6 +16,26 @@ export function FstLoginScreen() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [bioAvailable, setBioAvailable] = useState(false)
+  const [bioRegistered, setBioRegistered] = useState(false)
+  const [enableBio, setEnableBio] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const registered = hasBiometricRegistration()
+      if (cancelled) return
+      setBioRegistered(registered)
+      if (!registered) {
+        setBioAvailable(await isPlatformAuthenticatorAvailable())
+        return
+      }
+      setBioAvailable(isBiometricSupported() && registered)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (!configured) {
     return (
@@ -30,6 +58,14 @@ export function FstLoginScreen() {
     setBusy(true)
     try {
       await login(email, password)
+      if (enableBio && bioAvailable && !bioRegistered) {
+        try {
+          await registerBiometric(email, password)
+          setBioRegistered(true)
+        } catch (bioErr) {
+          console.warn('FST biometric registration skipped', bioErr)
+        }
+      }
     } catch (err) {
       const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: string }).code) : ''
       if (code.includes('invalid-credential') || code.includes('wrong-password')) {
@@ -37,6 +73,19 @@ export function FstLoginScreen() {
       } else {
         setError('Не удалось войти. Проверьте email и пароль.')
       }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function submitBiometric() {
+    setError(null)
+    setBusy(true)
+    try {
+      const creds = await loginWithBiometric()
+      await login(creds.email, creds.password)
+    } catch (err) {
+      setError(biometricErrorMessage(err))
     } finally {
       setBusy(false)
     }
@@ -51,6 +100,26 @@ export function FstLoginScreen() {
         <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-teal-700">FST</p>
         <h1 className="mt-1 text-2xl font-bold text-ink">Администратор</h1>
         <p className="mt-1 text-sm text-stone-500">Полный доступ · табель и склад</p>
+
+        {bioRegistered && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void submitBiometric()}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 py-3 text-sm font-semibold text-teal-900 hover:bg-teal-100 disabled:opacity-50"
+          >
+            <span aria-hidden className="text-lg">
+              👤
+            </span>
+            Face ID / Touch ID
+          </button>
+        )}
+
+        {bioRegistered && (
+          <p className="mt-4 text-center text-[10px] uppercase tracking-widest text-stone-400">
+            или пароль
+          </p>
+        )}
 
         <label className="mt-6 block text-xs font-semibold text-stone-500">
           Email
@@ -76,6 +145,18 @@ export function FstLoginScreen() {
           />
         </label>
 
+        {bioAvailable && !bioRegistered && (
+          <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-stone-600">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={enableBio}
+              onChange={(e) => setEnableBio(e.target.checked)}
+            />
+            <span>Включить Face ID / Touch ID на этом устройстве</span>
+          </label>
+        )}
+
         {error && (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
             {error}
@@ -87,8 +168,14 @@ export function FstLoginScreen() {
           disabled={busy}
           className="mt-5 w-full rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
         >
-          {busy ? '…' : 'Войти'}
+          {busy ? '…' : 'Войти по паролю'}
         </button>
+
+        {bioAvailable && (
+          <p className="mt-3 text-center text-[11px] text-stone-400">
+            Face ID работает только на этом телефоне / компьютере
+          </p>
+        )}
       </form>
     </div>
   )
